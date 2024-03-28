@@ -1,5 +1,5 @@
-"use client"
-import { useEffect, useState } from "react";
+"use client";
+import { useEffect, useState, useCallback } from "react";
 
 interface Todo {
   userId: number;
@@ -8,21 +8,31 @@ interface Todo {
   completed: boolean;
 }
 
-export default function Home() {
+const Home: React.FC = () => {
   const [todo, setTodo] = useState<Todo | null>(null); // State to hold the fetched todo
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/todos/1");
+      if (!response.ok) {
+        throw new Error("Failed to fetch");
+      }
+      const data = await response.json();
+      setTodo(data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    // Fetch the todo data when the component mounts
-    fetch("/todos/1")
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to fetch");
-        }
-        return response.json();
-      })
-      .then((data: Todo) => setTodo(data))
-      .catch((error) => console.error("Error fetching data:", error));
-  }, []); // Empty dependency array to only run once when the component mounts
+    if (!todo && !loading) {
+      fetchData();
+    }
+  }, [todo, loading, fetchData]);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
@@ -43,4 +53,6 @@ export default function Home() {
       )}
     </main>
   );
-}
+};
+
+export default Home;
